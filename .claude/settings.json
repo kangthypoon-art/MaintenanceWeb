@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Write",
+      "Bash",
+      "PowerShell",
+      "Read",
+      "Edit",
+      "Glob",
+      "Grep"
+    ],
+    "additionalDirectories": [
+      "C:\\AIProjects\\maintenance_app"
+    ]
+  }
+}

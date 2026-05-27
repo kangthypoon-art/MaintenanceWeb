@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  partner
+}
+
+enum ScheduleStatus {
+  pending
+  confirmed
+  completed
+  cancelled
+}
+
+model Company {
+  id               Int               @id @default(autoincrement())
+  name             String
+  code             String            @unique
+  inspectionCycle  Int               // 점검 주기 (일 단위)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  users            User[]
+  schedules        Schedule[]
+  contracts        Contract[]
+  companyContracts CompanyContract[]
+
+  @@map("companies")
+}
+
+model CompanyContract {
+  id                 Int      @id @default(autoincrement())
+  code               String                       // 업체 코드 (조인키)
+  seq                Int                          // 순번 (업체별 자동증가)
+  contractName       String                       // 계약명
+  inspectionLocation String?                      // 점검위치
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  company   Company    @relation(fields: [code], references: [code], onDelete: Cascade)
+  schedules Schedule[]
+
+  @@unique([code, seq])
+  @@map("company_contracts")
+}
+
+model Contract {
+  id           Int      @id @default(autoincrement())
+  companyId    Int
+  contractName String
+  description  String?
+  startDate    DateTime? @db.Date
+  endDate      DateTime? @db.Date
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  schedules Schedule[]
+
+  @@map("contracts")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  companyId Int?
+  name      String
+  email     String    @unique
+  password  String
+  role      Role      @default(partner)
+  phone     String?
+  fcmToken  String?
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  company           Company?       @relation(fields: [companyId], references: [id])
+  engineerSchedules Schedule[]     @relation("EngineerSchedules")
+  notifications     Notification[]
+
+  @@map("users")
+}
+
+model Schedule {
+  id                Int            @id @default(autoincrement())
+  companyId         Int
+  contractId        Int?
+  companyContractId Int?
+  engineerId        Int
+  date              DateTime       @db.Date
+  endDate           DateTime?      @db.Date   // 종료일 (다일 점검 지원)
+  startTime         String         // "HH:MM" 형식
+  endTime           String         // "HH:MM" 형식
+  pcNumber          Int
+  status            ScheduleStatus @default(pending)
+  memo              String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  company         Company          @relation(fields: [companyId], references: [id])
+  contract        Contract?        @relation(fields: [contractId], references: [id])
+  companyContract CompanyContract? @relation(fields: [companyContractId], references: [id])
+  engineer        User             @relation("EngineerSchedules", fields: [engineerId], references: [id])
+  report          Report?
+
+  @@unique([engineerId, date, startTime])
+  @@map("schedules")
+}
+
+model Report {
+  id         Int      @id @default(autoincrement())
+  scheduleId Int      @unique
+  fileUrl    String   // S3 URL
+  createdAt  DateTime @default(now())
+
+  schedule Schedule @relation(fields: [scheduleId], references: [id])
+
+  @@map("reports")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  message   String
+  type      String   // "d7_reminder" | "schedule_confirmed" | "unregistered_alert"
+  isRead    Boolean  @default(false)
+  sentAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model SystemSettingHistory {
+  id        Int      @id @default(autoincrement())
+  key       String
+  value     String
+  memo      String?
+  createdAt DateTime @default(now())
+
+  @@index([key])
+  @@map("system_setting_history")
+}
