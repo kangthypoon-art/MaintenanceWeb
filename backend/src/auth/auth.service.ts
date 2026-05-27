@@ -31,12 +31,16 @@ export class AuthService {
     const tokens = this.generateTokens(user.id, user.email, user.role);
     return {
       token: tokens.accessToken,
+      accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       user: {
-        id: String(user.id),
+        id: user.id,
+        email: user.email,
         name: user.name,
         role: user.role,
-        company_id: user.companyId ? String(user.companyId) : null,
+        companyId: user.companyId ?? null,
+        phone: user.phone ?? undefined,
+        isDeleted: user.isDeleted,
       },
     };
   }
