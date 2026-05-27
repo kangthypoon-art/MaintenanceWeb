@@ -21,12 +21,11 @@ export default function AdminSettingsPage() {
   });
 
   useEffect(() => {
-    if (settings) {
-      const map = Object.fromEntries(settings.map((s) => [s.key, s.value]));
-      if (map.MAX_PC_COUNT) setMaxPc(map.MAX_PC_COUNT);
-      if (map.START_HOUR) setStartHour(map.START_HOUR);
-      if (map.END_HOUR) setEndHour(map.END_HOUR);
-      if (map.D7_ALARM) setD7Alarm(map.D7_ALARM);
+    if (settings && typeof settings === 'object') {
+      if (settings.MAX_PC_COUNT) setMaxPc(settings.MAX_PC_COUNT);
+      if (settings.START_HOUR) setStartHour(settings.START_HOUR);
+      if (settings.END_HOUR) setEndHour(settings.END_HOUR);
+      if (settings.D7_ALARM) setD7Alarm(settings.D7_ALARM);
     }
   }, [settings]);
 

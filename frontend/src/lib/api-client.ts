@@ -69,7 +69,7 @@ export const excelApi = {
 };
 
 export const settingsApi = {
-  getAll: () => api.get<SystemSetting[]>('/settings'),
+  getAll: () => api.get<Record<string, string>>('/settings'),
   get: (key: string) => api.get<SystemSetting>(`/settings/${key}`),
   update: (key: string, value: string, memo?: string) =>
     api.put<SystemSetting>(`/settings/${key}`, { value, memo }),
