@@ -16,6 +16,7 @@ const schema = z.object({
   name: z.string().min(2, '이름을 입력하세요'),
   email: z.string().email('올바른 이메일을 입력하세요'),
   password: z.string().min(6, '비밀번호는 6자 이상이어야 합니다'),
+  phone: z.string().optional(),
   companyId: z.string().min(1, '협력사를 선택하세요'),
 });
 
@@ -58,6 +59,7 @@ export default function SignupPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input id="name" label="이름" placeholder="홍길동" error={errors.name?.message} {...register('name')} />
             <Input id="email" label="이메일" type="email" error={errors.email?.message} {...register('email')} />
+            <Input id="phone" label="전화번호 (선택)" type="tel" placeholder="01012345678" error={errors.phone?.message} {...register('phone')} />
             <Input id="password" label="비밀번호" type="password" error={errors.password?.message} {...register('password')} />
             <div className="space-y-1">
               <label htmlFor="companyId" className="text-sm font-medium">협력사</label>

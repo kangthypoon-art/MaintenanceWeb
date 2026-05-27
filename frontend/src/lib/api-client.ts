@@ -4,7 +4,7 @@ import type { AuthResponse, Company, CompanyContract, Contract, Notification, Sc
 export const authApi = {
   login: (email: string, password: string) =>
     api.post<AuthResponse>('/auth/login', { email, password }),
-  register: (data: { email: string; password: string; name: string; companyId: string }) =>
+  register: (data: { email: string; password: string; name: string; phone?: string; companyId: string }) =>
     api.post<AuthResponse>('/auth/register', data),
   withdraw: (email: string, password: string) => api.post('/auth/withdraw', { email, password }),
   checkEmail: (email: string) => api.get<{ available: boolean }>('/auth/check-email', { params: { email } }),
