@@ -10,6 +10,21 @@ import { UpdateScheduleDto } from './dto/update-schedule.dto';
 export class SchedulesService {
   constructor(private prisma: PrismaService) {}
 
+  /** Prisma 결과를 프론트엔드 Schedule 타입으로 변환 */
+  private fmt(s: any) {
+    const toDateStr = (d: any) =>
+      d instanceof Date ? d.toISOString().slice(0, 10) : (d ? String(d).slice(0, 10) : null);
+    return {
+      ...s,
+      date: toDateStr(s.date),
+      endDate: s.endDate ? toDateStr(s.endDate) : null,
+      companyName: s.company?.name ?? '',
+      engineerName: s.engineer?.name ?? '',
+      contractName: s.companyContract?.contractName ?? s.contract?.contractName ?? null,
+      inspectionLocation: s.companyContract?.inspectionLocation ?? null,
+    };
+  }
+
   async create(dto: CreateScheduleDto, requester: { role: string; companyId: number }) {
     // 파트너는 본인 업체만 예약 가능
     if (requester.role === 'partner' && dto.companyId !== requester.companyId) {
@@ -74,7 +89,7 @@ export class SchedulesService {
 
       const endDate = dto.endDate ? new Date(dto.endDate) : null;
 
-      return tx.schedule.create({
+      const created = await tx.schedule.create({
         data: {
           companyId: dto.companyId,
           engineerId: dto.engineerId,
@@ -92,6 +107,7 @@ export class SchedulesService {
           companyContract: { select: { contractName: true, inspectionLocation: true, seq: true } },
         },
       });
+      return this.fmt(created);
     });
   }
 
@@ -122,7 +138,7 @@ export class SchedulesService {
       };
     }
 
-    return this.prisma.schedule.findMany({
+    const rows = await this.prisma.schedule.findMany({
       where,
       include: {
         company: { select: { name: true, code: true } },
@@ -132,6 +148,7 @@ export class SchedulesService {
       },
       orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
     });
+    return rows.map((s) => this.fmt(s));
   }
 
   async findOne(id: number) {
@@ -140,11 +157,12 @@ export class SchedulesService {
       include: {
         company: true,
         engineer: { select: { id: true, name: true, email: true } },
+        companyContract: { select: { contractName: true, inspectionLocation: true, seq: true } },
         report: true,
       },
     });
     if (!schedule) throw new NotFoundException('일정을 찾을 수 없습니다.');
-    return schedule;
+    return this.fmt(schedule);
   }
 
   async update(id: number, dto: UpdateScheduleDto, requester: { role: string; companyId: number }) {
@@ -160,14 +178,16 @@ export class SchedulesService {
       updateData.endDate = dto.endDate ? new Date(dto.endDate) : null;
     }
 
-    return this.prisma.schedule.update({
+    const updated = await this.prisma.schedule.update({
       where: { id },
       data: updateData,
       include: {
         company: { select: { name: true } },
         engineer: { select: { name: true } },
+        companyContract: { select: { contractName: true, inspectionLocation: true, seq: true } },
       },
     });
+    return this.fmt(updated);
   }
 
   async remove(id: number, requester: { role: string; companyId: number }) {
